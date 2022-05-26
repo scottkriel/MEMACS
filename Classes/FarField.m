@@ -5338,6 +5338,7 @@ classdef FarField
             E3 = [];
             
             freqMarker = 'FREQUENCIES';
+            wavelengthMarker = 'WAVELENGTHS'; % Scott Kriel: Freq group object in grasp saves as wavelength
             startMarker = '++++';
             
             % Read the field header
@@ -5347,12 +5348,25 @@ classdef FarField
                     freqUnit = regexp(a, '(?<=\[)[^)]*(?=\])', 'match', 'once');
                     % Keep reading lines until all frequencies read
                     freq = [];
-                    while 1
+                    while 1 
                         a = fgetl(fid);
-                        if strcmp(a,startMarker), break; end
+                        %Scott Kriel: Added extra condition to handle GRASP
+                        %Add Field command which writes freq info twice
+                        if strcmp(a,startMarker) || strncmp(a,freqMarker,11), break; end
                         freq = [freq,str2num(a)];
                     end
+                % Scott Kriel: added wavelength to freq extraction
+                elseif strncmp(a,wavelengthMarker,11)
+                    freqUnit = 'Hz';
+                    freq = [];
+                    while 1 
+                        a = fgetl(fid);
+                        if strcmp(a,startMarker), break; end
+                        lambda = str2num(a);
+                        freq = [freq,(299792458./lambda)];
+                    end   
                 end
+                
                 if strcmp(a,startMarker)
                     a = fgetl(fid);
                     a = fgetl(fid);
